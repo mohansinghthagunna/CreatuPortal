@@ -49,6 +49,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
          startVideo(Offline.sharedInstance.videoList[Offline.sharedInstance.selectedVideoIndex])
       
         tableView.reloadData()
+        tableView.hidden  = false
         
         if(Offline.sharedInstance.menuSelect != 0){
             videoWebView.stringByEvaluatingJavaScriptFromString("ytplayer.stopVideo()");
@@ -196,6 +197,10 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
     func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let sectionView =  UIView(frame: CGRectMake(0, 0,self.tableView.frame.width, 40))
         let lblView = UILabel(frame: CGRectMake(15, 0,self.tableView.frame.width, 40))
+        let button = UIButton(frame: CGRectMake(self.tableView.frame.width-80, 0,80, 40))
+        button.setTitle("Show All", forState: .Normal)
+        button.tag = section
+        button.addTarget(self, action: #selector(NewsListVC.action(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         if( Offline.sharedInstance.menuSelect != 0){
             return nil
         }
@@ -210,6 +215,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
        
         lblView.textColor = UIColor.whiteColor()
         sectionView.addSubview(lblView)
+        sectionView.addSubview(button)
         sectionView.backgroundColor = UIColor(red: (43.0 / 255.0), green: (113.0 / 255.0), blue: (230.0 / 255.0), alpha: 1.0)
         
         return sectionView
@@ -269,6 +275,23 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         share.backgroundColor = UIColor.grayColor()
         
         return [share, more]
+    }
+    //MARK:button action
+    func action(sender:UIButton!) {
+        print("Button Clicked")
+        videoVIew.hidden = true
+        videoWebView.stringByEvaluatingJavaScriptFromString("ytplayer.stopVideo()");
+        var frame =  tableView.frame
+        frame.origin.y = 0
+        tableView.frame = frame
+       // navigationItem.title = Offline.sharedInstance.category[Offline.sharedInstance.menuSelect - 1].title
+        tableView.reloadData()
+        if sender.tag == 0{
+            
+        }
+        else{
+            
+        }
     }
     //MARK: COllection VIew Deligates
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -350,7 +373,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         // Set up your HTML.  The key URL parameters here are playsinline=1 and autoplay=1
         // Replace the height and width of the player here to match your UIWebView's  frame rect
         
-        let embededHTML = "<html><body bgcolor=\"#000000\" style='margin:0px;padding:0px;'><script type='text/javascript' src='http://www.youtube.com/iframe_api'></script><script type='text/javascript'>function onYouTubeIframeAPIReady(){ytplayer=new YT.Player('playerId',{events:{onReady:onPlayerReady}})}function onPlayerReady(a){a.target.playVideo();}</script><iframe id='playerId' type='text/html' width='\(videoWebView.frame.size.width)' height='\(videoWebView.frame.size.height)' src='http://www.youtube.com/embed/\(videoID)?enablejsapi=1&rel=0&playsinline=1&autoplay=1' frameborder='0'></body></html>"
+        let embededHTML = "<html><body bgcolor=\"#000000\" style='margin:0px;padding:0px;'><script type='text/javascript' src='http://www.youtube.com/iframe_api'></script><script type='text/javascript'>function onYouTubeIframeAPIReady(){ytplayer=new YT.Player('playerId',{events:{onReady:onPlayerReady}})}function onPlayerReady(a){a.target.playVideo();}</script><iframe id='playerId' type='text/html' width='\(UIScreen.mainScreen().bounds.size.width)' height='\(videoWebView.frame.size.height)' src='http://www.youtube.com/embed/\(videoID)?enablejsapi=1&rel=0&playsinline=1&autoplay=1' frameborder='0'></body></html>"
         
         // Load your webView with the HTML we just set up
         videoWebView.loadHTMLString(embededHTML, baseURL: NSBundle.mainBundle().bundleURL)
@@ -414,7 +437,8 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
            connection.cancel()
               tableView.reloadData()
             busyIndicator.hidden = true;
- 
+ tableView.hidden = false
+            
         }
         
     }
