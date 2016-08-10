@@ -22,8 +22,9 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
     var titleNews:[String] = []
     var desNews:[String] = []
     var imageNews:[UIImage] = []
-    
+    var isSameMenu:Int = 0
     override func viewDidLoad() {
+        isSameMenu = 0
         let urlPath: String = "http://tvannapurna.com/api/get_category_posts/?id=\(count)"
         busyIndicator.hidden = true;
         if(Offline.sharedInstance.menuSelect == 0 && Offline.sharedInstance.isFirst == 0){
@@ -65,10 +66,23 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
     @IBOutlet var webView: UIWebView!
     @IBAction func btnSideMenuTapped(sender: AnyObject) {
         
+        if(isSameMenu == 0 || isSameMenu == 3){
         // self.revealViewController()
         revealViewController().revealToggle(sender)
         revealViewController().delegate = self
-        
+        }
+        else{
+            isSameMenu = 0
+            videoVIew.hidden = false
+            //  contentView.frame.size.height =  contentView.frame.size.height + 338
+            //   tableView.scrollEnabled = false
+            navigationItem.title = "HOME"
+            var frame =  tableView.frame
+            frame.origin.y = 465.0
+            tableView.frame = frame
+            videoWebView.stringByEvaluatingJavaScriptFromString("ytplayer.playVideo()");
+            tableView.reloadData()
+        }
     }
     //MARK:SCROLL view deligate
     func scrollViewDidScroll(scrollView: UIScrollView) {
@@ -91,7 +105,11 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         
         if( Offline.sharedInstance.menuSelect == 0){
-            return 2
+            if isSameMenu == 0{
+               return 2
+            }
+            
+            return 1
         }
         return 1
     }
@@ -108,6 +126,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         }
         else
         {
+            if isSameMenu == 0 {
             if(indexPath.section == 0){
                 let postItem =  Offline.sharedInstance.recent[indexPath.row]
                 cell.lblTitle.text = postItem.title
@@ -120,6 +139,21 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
                             cell.lblTitle.text = postItem.title
                             cell.lblDescription.text = "date: " + postItem.date
                             cell.imgLayer.image = postItem.thumbnail_image
+                }
+                }
+            }
+            else if isSameMenu == 1{
+                let recent =  Offline.sharedInstance.recent[indexPath.row]
+                cell.lblTitle.text = recent.title
+                cell.lblDescription.text = "date: " + recent.date
+                cell.imgLayer.image = recent.thumbnail_image
+            }
+            else{
+                if(Offline.sharedInstance.category.count > 1){
+                    let postItem =  Offline.sharedInstance.category[1].posts[indexPath.row]
+                    cell.lblTitle.text = postItem.title
+                    cell.lblDescription.text = "date: " + postItem.date
+                    cell.imgLayer.image = postItem.thumbnail_image
                 }
             }
 
@@ -140,6 +174,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         {
              return Offline.sharedInstance.category[Offline.sharedInstance.menuSelect-1].posts.count
         }
+        if isSameMenu == 0{
         if(section == 0)
         {
             if( Offline.sharedInstance.recent.count > 5){
@@ -160,6 +195,11 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         }
         }
         return 5
+        }
+        else if isSameMenu == 1{
+            return  Offline.sharedInstance.recent.count
+        }
+         return  Offline.sharedInstance.category[1].posts.count
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
@@ -168,6 +208,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
              videoWebView.stringByEvaluatingJavaScriptFromString("ytplayer.pauseVideo()");
             let secondViewController = self.storyboard?.instantiateViewControllerWithIdentifier("newsDetails") as! NewsDetailsVC
         if(Offline.sharedInstance.menuSelect == 0){
+            if isSameMenu == 0{
             if(indexPath.section == 0)
             {
                secondViewController.post = Offline.sharedInstance.recent[indexPath.row]
@@ -175,7 +216,13 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
             else{
                     secondViewController.post = Offline.sharedInstance.category[1].posts[indexPath.row]
             }
-          
+            }
+            else if isSameMenu == 1 {
+                 secondViewController.post = Offline.sharedInstance.recent[indexPath.row]
+            }
+            else{
+                 secondViewController.post = Offline.sharedInstance.category[1].posts[indexPath.row]
+            }
         }
         else{
               secondViewController.post = Offline.sharedInstance.category[Offline.sharedInstance.menuSelect-1].posts[indexPath.row]
@@ -187,10 +234,11 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
     }
     
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        if(Offline.sharedInstance.menuSelect != 0)
+        if(Offline.sharedInstance.menuSelect != 0 || isSameMenu != 0)
         {
             return 0;
         }
+        
         return 40
     }
     
@@ -284,14 +332,19 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
         var frame =  tableView.frame
         frame.origin.y = 0
         tableView.frame = frame
+        
        // navigationItem.title = Offline.sharedInstance.category[Offline.sharedInstance.menuSelect - 1].title
-        tableView.reloadData()
+        
         if sender.tag == 0{
-            
+            isSameMenu = 1
+            navigationItem.title = "Recent News"
         }
         else{
-            
+           isSameMenu = 2
+            navigationItem.title = Offline.sharedInstance.category[1].title
         }
+      //  contentView.frame.size.height = contentView.frame.size.height - 338
+        tableView.reloadData()
     }
     //MARK: COllection VIew Deligates
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -338,6 +391,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
             if(Offline.sharedInstance.menuSelect >= 0){
                 if(Offline.sharedInstance.menuSelect == 0)
                 {
+                    isSameMenu = 0
                     videoVIew.hidden = false
                    //  contentView.frame.size.height =  contentView.frame.size.height + 338
                   //   tableView.scrollEnabled = false
@@ -349,6 +403,7 @@ class NewsListVC: UIViewController,UITableViewDataSource,UITableViewDelegate,UIC
                     
                 }
                 else{
+                    isSameMenu = 3
                   //  contentView.frame.size.height =  contentView.frame.size.height - 338
                   //   tableView.scrollEnabled = true
                       videoVIew.hidden = true
